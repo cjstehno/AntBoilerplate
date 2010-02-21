@@ -1,0 +1,201 @@
+<?xml version='1.0' ?>
+
+<!--
+   Copyright 2009 Christopher J. Stehno (http://stehno.com)
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<project name="@PROJECT_NAME@" default="war" xmlns:ivy="antlib:org.apache.ivy.ant">
+	
+	<!-- ============== -->
+	<!-- Configurations -->
+	<!-- ============== -->
+	
+    <property name="war.name" value="${ant.project.name}" />
+
+    <property name="src.dir" value="src" />
+    <property name="test.src.dir" value="test" />
+    <property name="web.src.dir" value="web" />
+    <property name="lib.dir" value="lib" />
+
+    <property name="build.dir" value="build" />
+    <property name="src.build.dir" value="${build.dir}/classes" />
+    <property name="test.build.dir" value="${build.dir}/test-classes" />
+    <property name="test.report.dir" value="${build.dir}/test-reports" />
+    <property name="depends.report.dir" value="${build.dir}/depends-reports" />
+    <property name="webapp.build.dir" value="${build.dir}/webapp" />
+
+    <property name="deploy.local.dir" value="/usr/local/tomcat/webapps" />
+
+    <property name="jvm.version" value="1.6" />
+    <property name="debug.enabled" value="true" />
+
+    <path id="classpath">
+        <fileset dir="${web.src.dir}/WEB-INF/lib" includes="**/*.jar" />
+        <fileset dir="${lib.dir}" includes="**/*.jar" />
+    </path>
+
+    <path id="test.classpath">
+        <path refid="classpath" />
+        <pathelement path="${src.build.dir}" />
+    </path>
+
+    <path id="test.runtime.classpath">
+        <path refid="test.classpath" />
+        <pathelement path="${test.build.dir}" />
+    </path>
+
+    <!-- ======= -->
+    <!-- Targets -->
+	<!-- ======= -->
+    
+    <target name="depends" description="Update the dependencies for the project.">
+        <ivy:retrieve sync="true" conf="prod" pattern="${web.src.dir}/WEB-INF/lib/[artifact].[ext]" />
+        <ivy:retrieve sync="true" conf="dev" pattern="${lib.dir}/[artifact].[ext]" />
+    </target>
+    
+    <target name="clean-depends" description="Clean out the managed dependencies.">
+        <delete>
+            <fileset dir="${web.src.dir}/WEB-INF/lib" includes="*.jar" />
+            <fileset dir="${lib.dir}" includes="*.jar" />
+        </delete>
+    </target>
+    
+    <target name="depends-report" depends="depends" description="Generates dependency report for the project.">
+        <ivy:report todir="${depends.report.dir}" conf="dev,prod" />
+    </target>
+	
+    <target name="compile" description="Comiles the java sources.">
+        <echo>Compiling java sources...</echo>
+        <mkdir dir="${src.build.dir}" />
+        <javac destdir="${src.build.dir}" classpathref="classpath" source="${jvm.version}" target="${jvm.version}" debug="${debug.enabled}">
+            <src path="${src.dir}" />
+            <include name="**/*.java" />
+        </javac>
+
+        <echo>Compiling java test sources...</echo>
+        <mkdir dir="${test.build.dir}" />
+        <javac destdir="${test.build.dir}" classpathref="test.classpath" source="${jvm.version}" target="${jvm.version}" debug="${debug.enabled}">
+            <src path="${test.src.dir}" />
+            <include name="**/*.java" />
+        </javac>
+
+        <echo>Copying over confg files...</echo>
+        <copy todir="${src.build.dir}">
+            <fileset dir="${src.dir}">
+                <include name="**/*.xml" />
+                <include name="**/*.properties" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="clean-compile" description="Cleans up the compiled java sources.">
+        <delete dir="${src.build.dir}" />
+        <delete dir="${test.build.dir}" />
+    </target>
+
+    <target name="test" depends="compile" description="Runs all the tests.">
+        <echo>Running unit tests...</echo>
+        <mkdir dir="${test.report.dir}" />
+        <junit printsummary="yes" haltonfailure="yes">
+            <classpath refid="test.runtime.classpath" />
+
+            <formatter type="plain" />
+
+            <batchtest fork="yes" todir="${test.report.dir}">
+                <fileset dir="${test.build.dir}" includes="**/*Test.class" />
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="clean-test" description="Cleans out all of the tests and test data.">
+        <delete dir="${test.report.dir}" />
+    </target>
+
+    <target name="webapp" depends="compile" description="Builds the exploded web application.">
+        <echo>Building web application...</echo>
+
+        <mkdir dir="${webapp.build.dir}" />
+        <copy todir="${webapp.build.dir}">
+            <fileset dir="${web.src.dir}">
+                <include name="**/*.*" />
+            </fileset>
+        </copy>
+
+        <mkdir dir="${webapp.build.dir}/WEB-INF/classes" />
+        <copy todir="${webapp.build.dir}/WEB-INF/classes">
+            <fileset dir="${src.build.dir}">
+                <include name="**/*.*" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="clean-webapp" description="Cleans up the exploded web application.">
+        <delete dir="${webapp.build.dir}" />
+    </target>
+
+    <target name="war" depends="webapp" description="Builds the war file.">
+        <echo>Building the war file...</echo>
+        <jar destfile="${build.dir}/${war.name}.war">
+            <fileset dir="${webapp.build.dir}" />
+        </jar>
+    </target>
+
+    <target name="clean-war" description="Cleans up the war file.">
+        <delete file="${build.dir}/${war.name}.war" />
+    </target>
+
+    <target name="clean-all" depends="clean-compile,clean-test,clean-webapp,clean-war" description="Cleans up all generated content." />
+
+    <target name="deploy-local" depends="war" description="Deploys the war to the locally configured server.">
+        <echo>Deploying war to local server (${deploy.local.dir})...</echo>
+        <copy todir="${deploy.local.dir}" file="${build.dir}/${war.name}.war">
+        </copy>
+    </target>
+
+    <target name="undeploy-local" description="Removes the war (and exploded webapp) from the local server.">
+        <delete file="${deploy.local.dir}/${war.name}.war" />
+        <delete dir="${deploy.local.dir}/${war.name}" />
+    </target>
+
+    <target name="deploy-remote" depends="war,-prompt-for-server" description="Deploys the war file to the configured remote server (scp only).">
+        <echo>Deploying war file to remote server via scp...</echo>
+
+        <scp file="${build.dir}/${war.name}.war" todir="${deploy.remote.conn}" />
+
+        <echo>You will need to finish the deployment from the server box (./deploy_to_tomcat.rb ${war.name} [username]).</echo>
+    </target>
+
+    <target name="-prompt-for-server" unless="deploy.remote.conn">
+        <input message="Enter connection string (user:pass@server:path):" addproperty="deploy.remote.conn" defaultvalue="" />
+    </target>
+
+    <target name="archive" depends="clean-all" description="Cleans up and archives the project in a time-stampped zip file one directory up.">
+        <echo>Creating archive of project...</echo>
+        <tstamp />
+        <zip destfile="../${ant.project.name}-${DSTAMP}-${TSTAMP}.zip" compress="yes" basedir="." />
+    </target>
+
+    <target name="sync-webapp" description="Syncs up the locally configured webapp content with the project.">
+        <echo>Sync-ing the web code with local exploded war...</echo>
+        <copy todir="${deploy.local.dir}/${war.name}">
+            <fileset dir="${web.src.dir}">
+                <exclude name="WEB-INF/**/*.*" />
+                <exclude name="META-INF/**/*.*" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="redeploy-local" depends="undeploy-local,deploy-local" />
+</project>

@@ -1,0 +1,72 @@
+<?xml version='1.0' ?>
+
+<!--
+   Copyright 2009 Christopher J. Stehno (http://stehno.com)
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<project name="boilerplate" default="install">
+
+    <target name="-setup" depends="-projecttype,-projectname,-projectdir,-orgname,-authorname,-authorurl,-projecturl" />
+
+    <target name="install" description="Installs the war build scripts in a project." depends="-setup">
+        <echo>Installing ${proj.type} project build files for ${proj.name} in ${proj.dir}...</echo>
+
+        <mkdir dir="${proj.dir}" />
+
+        <copy tofile="${proj.dir}/build.xml" file="src/build-${proj.type}.xml" overwrite="yes">
+            <filterset>
+                <filter token="PROJECT_NAME" value="${proj.name}"/>
+            </filterset>
+        </copy>
+
+        <copy tofile="${proj.dir}/ivy.xml" file="src/ivy.xml" overwrite="yes">
+            <filterset>
+                <filter token="PROJECT_NAME" value="${proj.name}"/>
+                <filter token="ORGANISATION_NAME" value="${org.name}"/>
+                <filter token="AUTHOR_NAME" value="${author.name}"/>
+                <filter token="AUTHOR_URL" value="${author.url}"/>
+                <filter token="PROJECT_URL" value="${proj.url}"/>
+            </filterset>
+        </copy>
+    </target>
+    
+    <target name="-projecttype" unless="proj.type">
+        <input message="Enter project type (war or jar):" addproperty="proj.type" defaultvalue="war" />
+    </target>
+
+    <target name="-projectname" unless="proj.name">
+        <input message="Enter project name (no spaces):" addproperty="proj.name" defaultvalue="" />
+    </target>
+
+    <target name="-projectdir" unless="proj.dir">
+        <input message="Enter project directory:" addproperty="proj.dir" defaultvalue="./${proj.name}" />
+    </target>
+    
+    <target name="-orgname" unless="org.name">
+        <input message="Enter organization name (no spaces):" addproperty="org.name" defaultvalue="" />
+    </target>
+    
+    <target name="-authorname" unless="author.name">
+        <input message="Enter author name:" addproperty="author.name" defaultvalue="" />
+    </target>
+    
+    <target name="-authorurl" unless="author.url">
+        <input message="Enter author url:" addproperty="author.url" defaultvalue="" />
+    </target>
+
+    <target name="-projecturl" unless="proj.url">
+        <input message="Enter project url:" addproperty="proj.url" defaultvalue="" />
+    </target>
+</project>

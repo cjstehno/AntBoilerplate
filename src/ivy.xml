@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+   Copyright 2009 Christopher J. Stehno (http://stehno.com)
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+<ivy-module version="2.0" 
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:noNamespaceSchemaLocation=
+                "http://ant.apache.org/ivy/schemas/ivy.xsd">
+                
+    <info organisation="@ORGANISATION_NAME@" module="@PROJECT_NAME@">
+        <ivyauthor name="@AUTHOR_NAME@" url="@AUTHOR_URL@"/>
+        <description homepage="@PROJECT_URL@">
+            Your project description.
+        </description>
+    </info>
+    
+    <configurations>
+        <conf name="prod" description="Production environment conf."/>
+        <conf name="dev" transitive="false" description="Testing environment conf."/>
+    </configurations>
+    
+    <dependencies>
+        <!-- ============== -->
+        <!-- For Production -->
+        <!-- ============== -->
+        
+        <dependency org="commons-lang" name="commons-lang" rev="2.4" conf="prod->default"/>
+        
+        <!-- =============== -->
+        <!-- For Development -->
+        <!-- =============== -->
+        
+        <dependency org="junit" name="junit" rev="4.4" conf="dev->default"/>
+        
+        <dependency org="org.jmock" name="jmock-junit4" rev="2.5.1" conf="dev->default"/>
+        <dependency org="org.jmock" name="jmock" rev="2.5.1" conf="dev->default"/>
+        <dependency org="org.hamcrest" name="hamcrest-core" rev="1.1" conf="dev->default"/>
+        <dependency org="org.hamcrest" name="hamcrest-library" rev="1.1" conf="dev->default"/>
+        <dependency org="org.objenesis" name="objenesis" rev="1.1" conf="dev->default"/>
+        
+    </dependencies>
+</ivy-module>
+
